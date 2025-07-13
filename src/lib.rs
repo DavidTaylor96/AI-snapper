@@ -3,6 +3,7 @@ pub mod screenshot;
 pub mod ai_client;
 pub mod daemon;
 pub mod ui;
+pub mod permissions;
 
 use ai_client::AIClient;
 use config::AppConfig;
