@@ -8,6 +8,12 @@ use tracing::Level;
 
 #[test]
 fn test_args_default_values() {
+    // Save current environment variable
+    let original_api_key = std::env::var("AI_API_KEY").ok();
+    
+    // Temporarily clear environment variable for this test
+    std::env::remove_var("AI_API_KEY");
+    
     let args = Args::parse_from(["ai-screenshot-analyzer"]);
     
     assert!(args.command.is_none());
@@ -15,6 +21,11 @@ fn test_args_default_values() {
     assert_eq!(args.provider, "openai");
     assert!(args.prompt.is_none());
     assert!(!args.debug);
+    
+    // Restore environment variable if it existed
+    if let Some(key) = original_api_key {
+        std::env::set_var("AI_API_KEY", key);
+    }
 }
 
 #[test]

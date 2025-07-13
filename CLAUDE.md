@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Rust-based AI screenshot analyzer that captures screenshots via global hotkey (Ctrl+Shift+A) and analyzes them using various AI providers (OpenAI GPT-4 Vision, Claude 3.5 Sonnet). The application runs as a daemon process with a beautiful terminal UI and includes optimized image processing for performance.
+This is a Rust-based AI screenshot analyzer that captures screenshots via global hotkey (Ctrl+Shift+F12) and analyzes them using various AI providers (OpenAI GPT-4 Vision, Claude 3.5 Sonnet). The application runs as a daemon process with a beautiful terminal UI and includes optimized image processing for performance.
 
 ## Development Commands
 

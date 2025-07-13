@@ -1,13 +1,14 @@
 
+# AI Screenshot Analyzer
+
+A Rust-based AI screenshot analyzer that captures screenshots via global hotkey and analyzes them using various AI providers.
+
 ## Usage Instructions
 
 1. **Setup:**
    ```bash
-   # Create new Rust project
-   cargo new ai-screenshot-analyzer
+   # Clone or setup the project
    cd ai-screenshot-analyzer
-   
-   # Replace Cargo.toml and src/ with the code above
    ```
 
 2. **Set API Key:**
@@ -46,7 +47,7 @@
 
 ## Key Features
 
-- **Global Hotkey**: Ctrl+Shift+A to capture and analyze
+- **Global Hotkey**: Cmd+Shift+S to capture and analyze
 - **Optimized Image Processing**: Smart format selection (PNG/JPEG)
 - **Multiple AI Providers**: OpenAI GPT-4 Vision, Claude 3.5 Sonnet
 - **Performance Optimized**: Binary uploads, efficient compression

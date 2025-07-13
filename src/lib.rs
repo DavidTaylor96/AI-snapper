@@ -4,6 +4,7 @@ pub mod ai_client;
 pub mod daemon;
 pub mod ui;
 pub mod permissions;
+pub mod hotkey_monitor;
 
 use ai_client::AIClient;
 use config::AppConfig;

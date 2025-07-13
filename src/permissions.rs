@@ -20,33 +20,33 @@ pub fn check_and_request_permissions() -> Result<bool> {
     println!("\n🔐 Permission Setup Guide");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!("The AI Screenshot Analyzer needs the following permissions:");
-    println!("");
+    println!();
     
     if !screen_recording_granted {
         println!("1. 🖥️  SCREEN RECORDING - To capture screenshots");
         println!("   → System Preferences → Security & Privacy → Privacy → Screen Recording");
         println!("   → Add and enable your Terminal app");
-        println!("");
+        println!();
     } else {
         println!("1. ✅ SCREEN RECORDING - Already granted");
-        println!("");
+        println!();
     }
     
     if !accessibility_granted {
-        println!("2. ♿ ACCESSIBILITY - To detect global hotkeys (Cmd+Shift+2)");
+        println!("2. ♿ ACCESSIBILITY - To detect global hotkeys (Cmd+Shift+S)");
         println!("   → System Preferences → Security & Privacy → Privacy → Accessibility");
         println!("   → Add and enable your Terminal app");
-        println!("");
+        println!();
     } else {
         println!("2. ✅ ACCESSIBILITY - Already granted");
-        println!("");
+        println!();
     }
     
     if !screen_recording_granted || !accessibility_granted {
         println!("💡 TIP: Permission dialogs may appear when you first use these features.");
         println!("💡 TIP: If hotkeys don't work, check Accessibility permissions.");
         println!("💡 TIP: If screenshots fail, check Screen Recording permissions.");
-        println!("");
+        println!();
         
         // Try to open system preferences to help the user
         #[cfg(target_os = "macos")]

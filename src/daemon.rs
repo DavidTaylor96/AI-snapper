@@ -1,12 +1,8 @@
 use anyhow::Result;
-use global_hotkey::{
-    hotkey::{Code, HotKey, Modifiers},
-    GlobalHotKeyEvent, GlobalHotKeyManager,
-};
 use std::sync::Arc;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
-use crate::{AppState, ui, permissions};
+use crate::{AppState, ui, permissions, hotkey_monitor::HotkeyMonitor};
 
 pub async fn run_daemon(state: Arc<AppState>) -> Result<()> {
     ui::print_header();
@@ -17,72 +13,31 @@ pub async fn run_daemon(state: Arc<AppState>) -> Result<()> {
         println!("⚠️  Some permissions may still be missing.");
         println!("💡 If hotkeys don't work, please check System Preferences → Security & Privacy → Privacy");
         println!("   and ensure Terminal/your app has both Accessibility and Screen Recording permissions.");
-        println!("");
+        println!();
     }
     
-    info!("Initializing global hotkey manager...");
-    debug!("AppState initialized with AI provider: {}", state.ai_client.provider());
-    
-    // Initialize global hotkey manager
-    let manager = GlobalHotKeyManager::new()
-        .map_err(|e| anyhow::anyhow!("Failed to initialize hotkey manager: {}", e))?;
-    
-    info!("Creating hotkey Cmd+Shift+2...");
-    
-    // Create hotkey (Cmd+Shift+2)
-    let hotkey = HotKey::new(
-        Some(Modifiers::META | Modifiers::SHIFT),
-        Code::Digit2,
-    );
-    
-    info!("Hotkey created with ID: {:?}", hotkey.id());
-    
-    // Register hotkey
-    info!("Registering hotkey...");
-    manager.register(hotkey)
-        .map_err(|e| anyhow::anyhow!("Failed to register hotkey: {}", e))?;
-    
-    info!("✅ Hotkey registered successfully");
     info!("🚀 AI Screenshot Analyzer is running");
-    println!("Press Cmd+Shift+2 to capture and analyze screenshot");
+    println!("Press Cmd+Shift+S to capture and analyze screenshot");
     println!("Press Ctrl+C to exit");
     
-    let state = Arc::clone(&state);
-    let mut event_count = 0;
+    // Initialize and start hotkey monitoring using device_query
+    let monitor = HotkeyMonitor::new();
+    monitor.start_monitoring(Arc::clone(&state))?;
     
-    // Main event loop - use blocking recv with timeout for better event handling
-    debug!("Starting main event loop with timeout of 100ms");
+    info!("✅ Hotkey monitoring started successfully");
+    
+    // Keep the main thread alive and responsive to Ctrl+C
     loop {
-        match GlobalHotKeyEvent::receiver().recv_timeout(std::time::Duration::from_millis(100)) {
-            Ok(event) => {
-                event_count += 1;
-                info!("🔥 Hotkey event received! Event #{}, ID: {:?}, Expected ID: {:?}", 
-                      event_count, event.id, hotkey.id());
-                
-                if event.id == hotkey.id() {
-                    info!("✅ Hotkey ID matches! Starting screenshot capture...");
-                    let state_clone = Arc::clone(&state);
-                    tokio::spawn(async move {
-                        if let Err(e) = handle_screenshot_request(state_clone).await {
-                            error!("Screenshot analysis failed: {}", e);
-                            ui::print_error(&format!("❌ Analysis failed: {}", e));
-                        }
-                    });
-                } else {
-                    warn!("❌ Hotkey ID mismatch! Received: {:?}, Expected: {:?}", event.id, hotkey.id());
-                }
-            }
-            Err(e) => {
-                debug!("Hotkey recv timeout or error: {:?}", e);
-                debug!("Event loop iteration completed, continuing...");
-                // Continue loop on timeout, exit on disconnect
-                if format!("{:?}", e).contains("Disconnected") {
-                    error!("Hotkey event receiver disconnected!");
-                    return Err(anyhow::anyhow!("Hotkey event receiver disconnected"));
-                }
-            }
+        tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+        
+        // Check if monitoring is still active
+        if !monitor.is_monitoring() {
+            info!("⚠️ Hotkey monitoring stopped");
+            break;
         }
     }
+    
+    Ok(())
 }
 
 pub async fn handle_screenshot_request(state: Arc<AppState>) -> Result<()> {
