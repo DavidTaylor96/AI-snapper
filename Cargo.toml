@@ -1,0 +1,49 @@
+[package]
+name = "ai-screenshot-analyzer"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "ai-screenshot-analyzer"
+path = "src/main.rs"
+
+[lib]
+name = "ai_screenshot_analyzer"
+path = "src/lib.rs"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+screenshots = "0.5"
+global-hotkey = "0.5"
+reqwest = { version = "0.11", features = ["json", "multipart", "stream"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+clap = { version = "4.0", features = ["derive", "env"] }
+anyhow = "1.0"
+image = { version = "0.24", features = ["png", "jpeg"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+indicatif = "0.17"
+crossterm = "0.27"
+uuid = { version = "1.0", features = ["v4"] }
+dirs = "5.0"
+config = "0.13"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+base64 = "0.22"
+toml = "0.8"
+
+[dependencies.png]
+version = "0.17"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.0"
+serial_test = "3.0"
+
+# Code coverage configuration
+[profile.coverage]
+inherits = "dev"
+opt-level = 0
+debug = true
+incremental = false
+codegen-units = 1
