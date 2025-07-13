@@ -17,7 +17,7 @@ impl Default for AppConfig {
         let screenshots_dir = dirs::home_dir()
             .unwrap_or_else(|| PathBuf::from("."))
             .join(".ai-screenshots");
-        
+
         Self {
             screenshots_dir,
             image_format: "png".to_string(),
@@ -34,25 +34,24 @@ impl AppConfig {
         let config_dir = dirs::config_dir()
             .unwrap_or_else(|| PathBuf::from("."))
             .join("ai-screenshot-analyzer");
-        
+
         let config_file = config_dir.join("config.toml");
-        
+
         if config_file.exists() {
             let config_str = std::fs::read_to_string(&config_file)?;
             let config: AppConfig = toml::from_str(&config_str)?;
             Ok(config)
         } else {
             let config = AppConfig::default();
-            
+
             // Create config directory
             std::fs::create_dir_all(&config_dir)?;
-            
+
             // Save default config
             let config_str = toml::to_string_pretty(&config)?;
             std::fs::write(&config_file, config_str)?;
-            
+
             Ok(config)
         }
     }
 }
-

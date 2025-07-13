@@ -7,14 +7,11 @@ edition = "2021"
 name = "ai-screenshot-analyzer"
 path = "src/main.rs"
 
-[lib]
-name = "ai_screenshot_analyzer"
-path = "src/lib.rs"
 
 [dependencies]
 tokio = { version = "1.0", features = ["full"] }
 screenshots = "0.5"
-global-hotkey = "0.5"
+device_query = "2.1"
 reqwest = { version = "0.11", features = ["json", "multipart", "stream"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -24,21 +21,11 @@ image = { version = "0.24", features = ["png", "jpeg"] }
 crossterm = "0.27"
 indicatif = "0.17"
 dirs = "5.0"
-config = "0.13"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 base64 = "0.22"
 toml = "0.8"
 
-[target.'cfg(target_os = "macos")'.dependencies]
-core-foundation = "0.9"
-core-graphics = "0.23"
-
-[target.'cfg(target_os = "macos")'.dependencies.cocoa]
-version = "0.25"
-
-[target.'cfg(target_os = "macos")'.dependencies.objc]
-version = "0.2"
 
 [dev-dependencies]
 

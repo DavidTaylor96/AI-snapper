@@ -13,7 +13,8 @@ pub fn print_header() {
         Print("🤖 AI Screenshot Analyzer\n"),
         Print("━━━━━━━━━━━━━━━━━━━━━━━━━━\n"),
         ResetColor
-    ).ok();
+    )
+    .ok();
 }
 
 pub fn print_status(message: &str) {
@@ -22,7 +23,8 @@ pub fn print_status(message: &str) {
         SetForegroundColor(Color::Yellow),
         Print(format!("{}\n", message)),
         ResetColor
-    ).ok();
+    )
+    .ok();
 }
 
 pub fn print_success(message: &str) {
@@ -31,7 +33,8 @@ pub fn print_success(message: &str) {
         SetForegroundColor(Color::Green),
         Print(format!("{}\n", message)),
         ResetColor
-    ).ok();
+    )
+    .ok();
 }
 
 pub fn print_error(message: &str) {
@@ -40,7 +43,8 @@ pub fn print_error(message: &str) {
         SetForegroundColor(Color::Red),
         Print(format!("{}\n", message)),
         ResetColor
-    ).ok();
+    )
+    .ok();
 }
 
 pub fn print_analysis_result(analysis: &str) {
@@ -56,6 +60,6 @@ pub fn print_analysis_result(analysis: &str) {
         Print("─".repeat(50)),
         Print("\n"),
         ResetColor
-    ).ok();
+    )
+    .ok();
 }
-
