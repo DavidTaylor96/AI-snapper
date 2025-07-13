@@ -120,10 +120,10 @@ start_application() {
 }
 
 simulate_hotkey() {
-    log "⌨️ Simulating Cmd+Shift+S hotkey..."
+    log "⌨️ Simulating Ctrl+Alt+Space hotkey..."
     
-    # Use AppleScript to simulate the hotkey
-    osascript -e 'tell application "System Events" to key code 1 using {command down, shift down}' 2>/dev/null
+    # Use AppleScript to simulate the hotkey (key code 49 = Space)
+    osascript -e 'tell application "System Events" to key code 49 using {control down, option down}' 2>/dev/null
     
     if [ $? -eq 0 ]; then
         log_success "Hotkey simulation successful"

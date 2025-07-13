@@ -97,11 +97,11 @@ async fn run_daemon(state: Arc<AppState>) -> Result<()> {
     ui::print_header();
     
     info!("🚀 AI Screenshot Analyzer is running");
-    println!("Press Cmd+Shift+S to capture and analyze screenshot");
+    println!("Press Ctrl+Alt+Space to capture and analyze screenshot");
     println!("Press Ctrl+C to exit");
     
     // Initialize and start hotkey monitoring
-    let monitor = HotkeyMonitor::new();
+    let mut monitor = HotkeyMonitor::new();
     monitor.start_monitoring(Arc::clone(&state))?;
     
     info!("✅ Hotkey monitoring started successfully");

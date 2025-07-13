@@ -1,5 +1,6 @@
 use anyhow::Result;
-use device_query::{DeviceQuery, DeviceState, Keycode};
+use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState};
+use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::{thread, time::Duration};
@@ -11,87 +12,101 @@ static IS_MONITORING: AtomicBool = AtomicBool::new(false);
 
 pub struct HotkeyMonitor {
     is_running: Arc<AtomicBool>,
+    manager: Option<GlobalHotKeyManager>,
+    hotkey: Option<HotKey>,
 }
 
 impl HotkeyMonitor {
     pub fn new() -> Self {
         Self {
             is_running: Arc::new(AtomicBool::new(false)),
+            manager: None,
+            hotkey: None,
         }
     }
     
-    pub fn start_monitoring(&self, state: Arc<AppState>) -> Result<()> {
+    pub fn start_monitoring(&mut self, state: Arc<AppState>) -> Result<()> {
         if IS_MONITORING.load(Ordering::SeqCst) {
             warn!("Hotkey monitoring is already running");
             return Ok(());
         }
+        
+        // Create global hotkey manager
+        let manager = GlobalHotKeyManager::new()?;
+        
+        // Define hotkey: Ctrl+Alt+Space (easy to press, uncommon on macOS)
+        let hotkey = HotKey::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::Space);
+        
+        // Register the hotkey
+        manager.register(hotkey)?;
+        
+        info!("🎹 Starting global hotkey monitoring (Ctrl+Alt+Space)");
+        info!("💡 Global hotkey registered successfully");
+        
+        // Store manager and hotkey for cleanup
+        self.manager = Some(manager);
+        self.hotkey = Some(hotkey);
         
         IS_MONITORING.store(true, Ordering::SeqCst);
         self.is_running.store(true, Ordering::SeqCst);
         
         let is_running = Arc::clone(&self.is_running);
         
-        info!("🎹 Starting hotkey monitoring (Cmd+Shift+S)");
-        info!("💡 Monitoring thread will check for key combinations every 100ms");
-        
+        // Start event listener thread
         thread::spawn(move || {
-            let device_state = DeviceState::new();
             let mut last_activation = std::time::Instant::now();
-            let debounce_time = Duration::from_millis(1000); // Prevent double-triggers
-            let mut iteration_count = 0;
+            let debounce_time = Duration::from_millis(1000);
             
-            info!("🔄 Hotkey monitoring thread started");
+            info!("🔄 Global hotkey event listener started");
             
             while is_running.load(Ordering::SeqCst) && IS_MONITORING.load(Ordering::SeqCst) {
-                iteration_count += 1;
-                
-                // Periodic heartbeat for debugging
-                if iteration_count % 100 == 0 {
-                    debug!("Hotkey monitor heartbeat - iteration {}", iteration_count);
-                }
-                
-                let keys: Vec<Keycode> = device_state.get_keys();
-                
-                if !keys.is_empty() {
-                    debug!("Keys detected: {:?}", keys);
+                if let Ok(event) = GlobalHotKeyEvent::receiver().try_recv() {
+                    debug!("Global hotkey event received: {:?}", event);
                     
-                    // Check for Cmd+Shift+S combination (Meta key on macOS, LWin/RWin on Windows/Linux)
-                    let cmd_pressed = keys.contains(&Keycode::LMeta) || 
-                                     keys.contains(&Keycode::RMeta);
-                    let shift_pressed = keys.contains(&Keycode::LShift) || 
-                                       keys.contains(&Keycode::RShift);
-                    let s_pressed = keys.contains(&Keycode::S);
-                    
-                    let now = std::time::Instant::now();
-                    let time_since_last = now.duration_since(last_activation);
-                    
-                    if cmd_pressed && shift_pressed && s_pressed && time_since_last >= debounce_time {
-                        last_activation = now;
-                        info!("🔥 Hotkey combination detected: Cmd+Shift+S");
+                    if event.state == HotKeyState::Pressed {
+                        let now = std::time::Instant::now();
+                        let time_since_last = now.duration_since(last_activation);
                         
-                        // Trigger screenshot analysis
-                        let state_clone = Arc::clone(&state);
-                        tokio::spawn(async move {
-                            if let Err(e) = handle_hotkey_trigger(state_clone).await {
-                                tracing::error!("Hotkey trigger failed: {}", e);
-                            }
-                        });
+                        if time_since_last >= debounce_time {
+                            last_activation = now;
+                            info!("🔥 Global hotkey triggered: Ctrl+Alt+Space");
+                            
+                            // Trigger screenshot analysis
+                            let state_clone = Arc::clone(&state);
+                            tokio::spawn(async move {
+                                if let Err(e) = handle_hotkey_trigger(state_clone).await {
+                                    tracing::error!("Hotkey trigger failed: {}", e);
+                                }
+                            });
+                        }
                     }
                 }
                 
-                thread::sleep(Duration::from_millis(100));
+                thread::sleep(Duration::from_millis(10)); // Small sleep to prevent busy waiting
             }
             
-            info!("🛑 Hotkey monitoring thread stopped");
+            info!("🛑 Global hotkey event listener stopped");
         });
         
         Ok(())
     }
     
-    pub fn stop_monitoring(&self) {
-        info!("🛑 Stopping hotkey monitoring");
+    pub fn stop_monitoring(&mut self) {
+        info!("🛑 Stopping global hotkey monitoring");
         IS_MONITORING.store(false, Ordering::SeqCst);
         self.is_running.store(false, Ordering::SeqCst);
+        
+        // Unregister hotkey if it exists
+        if let (Some(manager), Some(hotkey)) = (&self.manager, &self.hotkey) {
+            if let Err(e) = manager.unregister(*hotkey) {
+                warn!("Failed to unregister hotkey: {}", e);
+            } else {
+                info!("🎹 Global hotkey unregistered successfully");
+            }
+        }
+        
+        self.manager = None;
+        self.hotkey = None;
     }
     
     pub fn is_monitoring(&self) -> bool {

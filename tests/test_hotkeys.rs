@@ -1,5 +1,6 @@
 use anyhow::Result;
-use device_query::{DeviceQuery, DeviceState, Keycode};
+use global_hotkey::{GlobalHotKeyManager, HotKeyState};
+use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use std::time::Duration;
 
 pub async fn test_ai_connection(provider: &str) -> Result<String> {
@@ -17,81 +18,85 @@ pub async fn test_ai_connection(provider: &str) -> Result<String> {
 }
 
 pub async fn test_hotkeys() -> Result<()> {
-    println!("🧪 Testing device_query hotkey system...");
+    println!("🧪 Testing global-hotkey system...");
     
-    // Test device state creation
-    let device_state = DeviceState::new();
-    println!("✅ Device state created successfully");
+    // Test hotkey manager creation
+    let manager = GlobalHotKeyManager::new()?;
+    println!("✅ Global hotkey manager created successfully");
     
-    // Test basic key detection
-    println!("Testing key detection for 3 seconds...");
-    println!("Try pressing some keys (including Cmd+Shift+S):");
+    // Test hotkey registration
+    let hotkey = HotKey::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::Space);
+    manager.register(hotkey)?;
+    println!("✅ Ctrl+Alt+Space hotkey registered successfully");
+    
+    // Test basic event detection
+    println!("Testing hotkey detection for 3 seconds...");
+    println!("Try pressing Ctrl+Alt+Space:");
     
     let start_time = std::time::Instant::now();
-    let mut key_events = 0;
-    let mut cmd_shift_s_detected = 0;
+    let mut hotkey_events = 0;
+    let mut ctrl_alt_space_detected = 0;
     
     while start_time.elapsed() < Duration::from_secs(3) {
-        let keys: Vec<Keycode> = device_state.get_keys();
-        
-        if !keys.is_empty() {
-            key_events += 1;
-            println!("🔍 Keys detected: {:?}", keys);
+        if let Ok(event) = global_hotkey::GlobalHotKeyEvent::receiver().try_recv() {
+            hotkey_events += 1;
+            println!("🔍 Hotkey event detected: {:?}", event);
             
-            // Check for Cmd+Shift+S combination
-            let cmd_pressed = keys.contains(&Keycode::LMeta) || keys.contains(&Keycode::RMeta);
-            let shift_pressed = keys.contains(&Keycode::LShift) || keys.contains(&Keycode::RShift);
-            let s_pressed = keys.contains(&Keycode::S);
-            
-            if cmd_pressed && shift_pressed && s_pressed {
-                cmd_shift_s_detected += 1;
-                println!("🎯 Cmd+Shift+S combination detected!");
+            // Check for Ctrl+Alt+Space combination
+            if event.state == HotKeyState::Pressed {
+                ctrl_alt_space_detected += 1;
+                println!("🎯 Ctrl+Alt+Space combination detected!");
             }
         }
         
         std::thread::sleep(Duration::from_millis(100));
     }
     
-    println!("✅ Hotkey test completed!");
-    println!("   - Total key events: {}", key_events);
-    println!("   - Cmd+Shift+S detections: {}", cmd_shift_s_detected);
+    // Cleanup
+    manager.unregister(hotkey)?;
+    println!("✅ Hotkey unregistered successfully");
     
-    if key_events > 0 {
-        println!("✅ Device query is working - keys can be detected");
+    println!("✅ Hotkey test completed!");
+    println!("   - Total hotkey events: {}", hotkey_events);
+    println!("   - Ctrl+Alt+Space detections: {}", ctrl_alt_space_detected);
+    
+    if hotkey_events > 0 {
+        println!("✅ Global hotkey is working - events can be detected");
     } else {
-        println!("⚠️ No keys detected - try running with user interaction");
+        println!("⚠️ No hotkey events detected - try running with user interaction");
     }
     
     Ok(())
 }
 
 #[tokio::test]
-async fn test_device_state_creation() {
-    println!("🧪 Testing device state creation...");
+async fn test_hotkey_manager_creation() {
+    println!("🧪 Testing hotkey manager creation...");
     
-    let device_state = DeviceState::new();
-    println!("✅ Device state created successfully");
+    let manager = GlobalHotKeyManager::new().expect("Failed to create hotkey manager");
+    println!("✅ Hotkey manager created successfully");
     
-    // Test that we can call get_keys without crashing
-    let keys = device_state.get_keys();
-    println!("✅ get_keys() call successful, found {} active keys", keys.len());
+    // Test that we can create a hotkey without crashing
+    let hotkey = HotKey::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::Space);
+    println!("✅ Hotkey creation successful: Ctrl+Alt+Space");
 }
 
 #[tokio::test]
-async fn test_hotkey_detection_logic() {
-    println!("🧪 Testing hotkey detection logic...");
+async fn test_hotkey_registration() {
+    println!("🧪 Testing hotkey registration...");
     
-    let device_state = DeviceState::new();
+    let manager = GlobalHotKeyManager::new().expect("Failed to create hotkey manager");
     
-    // Test the logic for detecting key combinations
-    let keys = device_state.get_keys();
+    // Test hotkey registration and unregistration
+    let hotkey = HotKey::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::Space);
     
-    // Check if our hotkey detection logic works (even if no keys are pressed)
-    let cmd_pressed = keys.contains(&Keycode::LMeta) || keys.contains(&Keycode::RMeta);
-    let shift_pressed = keys.contains(&Keycode::LShift) || keys.contains(&Keycode::RShift);
-    let s_pressed = keys.contains(&Keycode::S);
+    // Register hotkey
+    manager.register(hotkey).expect("Failed to register hotkey");
+    println!("✅ Hotkey registered successfully");
     
-    println!("✅ Hotkey detection logic test passed");
-    println!("   - Current state: Cmd={}, Shift={}, S={}", cmd_pressed, shift_pressed, s_pressed);
-    println!("   - Active keys: {:?}", keys);
+    // Unregister hotkey
+    manager.unregister(hotkey).expect("Failed to unregister hotkey");
+    println!("✅ Hotkey unregistered successfully");
+    
+    println!("✅ Hotkey registration test passed");
 }

@@ -4,7 +4,7 @@ Automation test script for AI Screenshot Analyzer
 
 This script:
 1. Builds and starts the AI screenshot analyzer application
-2. Simulates the Cmd+Shift+S hotkey to trigger a screenshot
+2. Simulates the Ctrl+Alt+Space hotkey to trigger a screenshot
 3. Waits for and verifies the AI response
 4. Cleans up processes and validates the test results
 
@@ -128,8 +128,8 @@ class AutomationTest:
             self.log(f"⚠️ Error reading output: {e}")
             
     def simulate_hotkey(self):
-        """Simulate the Cmd+Shift+S hotkey"""
-        self.log("⌨️ Simulating Cmd+Shift+S hotkey...")
+        """Simulate the Ctrl+Alt+Space hotkey"""
+        self.log("⌨️ Simulating Ctrl+Alt+Space hotkey...")
         
         try:
             # Give the application a moment to be ready
@@ -148,16 +148,16 @@ class AutomationTest:
                 kb = keyboard.Controller()
                 
                 # Press and release the hotkey combination
-                with kb.pressed(Key.cmd, Key.shift):
-                    kb.press('s')
-                    kb.release('s')
+                with kb.pressed(Key.ctrl, Key.alt):
+                    kb.press(Key.space)
+                    kb.release(Key.space)
                     
                 time.sleep(0.5)
                 
                 # Try a second time
-                with kb.pressed(Key.cmd, Key.shift):
-                    kb.press('s')
-                    kb.release('s')
+                with kb.pressed(Key.ctrl, Key.alt):
+                    kb.press(Key.space)
+                    kb.release(Key.space)
                     
                 self.log("✅ pynput hotkey simulation completed")
                 success = True
@@ -171,15 +171,15 @@ class AutomationTest:
                 applescript = '''
                 tell application "System Events"
                     delay 0.3
-                    key code 1 using {command down, shift down}
+                    key code 49 using {control down, option down}
                     delay 0.1
-                    key code 1 using {command down, shift down}
+                    key code 49 using {control down, option down}
                     delay 0.1
-                    key code 1 using {command down, shift down}
+                    key code 49 using {control down, option down}
                     delay 0.1
-                    key code 1 using {command down, shift down}
+                    key code 49 using {control down, option down}
                     delay 0.1
-                    key code 1 using {command down, shift down}
+                    key code 49 using {control down, option down}
                 end tell
                 '''
                 
@@ -202,11 +202,11 @@ class AutomationTest:
                 applescript = '''
                 tell application "System Events"
                     delay 0.5
-                    keystroke "s" using {command down, shift down}
+                    key code 49 using {control down, option down}
                     delay 0.2
-                    keystroke "s" using {command down, shift down}
+                    key code 49 using {control down, option down}
                     delay 0.2
-                    keystroke "s" using {command down, shift down}
+                    key code 49 using {control down, option down}
                 end tell
                 '''
                 
