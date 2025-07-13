@@ -33,15 +33,26 @@ impl HotkeyMonitor {
         
         // Create global hotkey manager
         let manager = GlobalHotKeyManager::new()?;
+        debug!("🔧 GlobalHotKeyManager created successfully");
         
-        // Define hotkey: Ctrl+Alt+Space (easy to press, uncommon on macOS)
-        let hotkey = HotKey::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::Space);
+        // Define hotkey: Cmd+Shift+Space (macOS-friendly, easy to press)
+        let hotkey = HotKey::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::Space);
+        debug!("🔑 Hotkey definition created: {:?}", hotkey);
+        debug!("🔑 Modifiers: {:?}, Key Code: {:?}", Modifiers::SUPER | Modifiers::SHIFT, Code::Space);
         
         // Register the hotkey
-        manager.register(hotkey)?;
+        match manager.register(hotkey) {
+            Ok(_) => {
+                info!("💡 Global hotkey registered successfully");
+                debug!("✅ Hotkey registration completed without errors");
+            }
+            Err(e) => {
+                tracing::error!("❌ Failed to register hotkey: {}", e);
+                return Err(e.into());
+            }
+        }
         
-        info!("🎹 Starting global hotkey monitoring (Ctrl+Alt+Space)");
-        info!("💡 Global hotkey registered successfully");
+        info!("🎹 Starting global hotkey monitoring (Cmd+Shift+Space)");
         
         // Store manager and hotkey for cleanup
         self.manager = Some(manager);
@@ -58,18 +69,31 @@ impl HotkeyMonitor {
             let debounce_time = Duration::from_millis(1000);
             
             info!("🔄 Global hotkey event listener started");
+            debug!("📋 Monitoring for hotkey: Cmd+Shift+Space (Super+Shift+Space)");
             
             while is_running.load(Ordering::SeqCst) && IS_MONITORING.load(Ordering::SeqCst) {
+                // Log periodic status to confirm monitoring is active
+                static mut LAST_STATUS_LOG: Option<std::time::Instant> = None;
+                let now = std::time::Instant::now();
+                unsafe {
+                    if LAST_STATUS_LOG.map_or(true, |last| now.duration_since(last) >= Duration::from_secs(30)) {
+                        debug!("🔍 Hotkey monitoring active - waiting for events...");
+                        LAST_STATUS_LOG = Some(now);
+                    }
+                }
+                
                 if let Ok(event) = GlobalHotKeyEvent::receiver().try_recv() {
-                    debug!("Global hotkey event received: {:?}", event);
+                    debug!("🎹 Raw hotkey event received: {:?}", event);
+                    debug!("📊 Event details - ID: {}, State: {:?}", event.id, event.state);
                     
                     if event.state == HotKeyState::Pressed {
-                        let now = std::time::Instant::now();
+                        debug!("⬇️ Key press detected, checking debounce...");
                         let time_since_last = now.duration_since(last_activation);
+                        debug!("⏱️ Time since last activation: {:?} (debounce: {:?})", time_since_last, debounce_time);
                         
                         if time_since_last >= debounce_time {
                             last_activation = now;
-                            info!("🔥 Global hotkey triggered: Ctrl+Alt+Space");
+                            info!("🔥 Global hotkey triggered: Cmd+Shift+Space - starting screenshot capture");
                             
                             // Trigger screenshot analysis
                             let state_clone = Arc::clone(&state);
@@ -78,8 +102,14 @@ impl HotkeyMonitor {
                                     tracing::error!("Hotkey trigger failed: {}", e);
                                 }
                             });
+                        } else {
+                            debug!("⚡ Hotkey press ignored due to debounce (too soon after last activation)");
                         }
+                    } else {
+                        debug!("⬆️ Key release detected - ignoring");
                     }
+                } else {
+                    // No events available or error occurred - this is normal for try_recv
                 }
                 
                 thread::sleep(Duration::from_millis(10)); // Small sleep to prevent busy waiting
