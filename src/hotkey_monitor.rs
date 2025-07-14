@@ -290,13 +290,13 @@ async fn handle_hotkey_trigger(state: Arc<AppState>) -> Result<()> {
     pb.set_message("Processing with AI...");
     pb.enable_steady_tick(Duration::from_millis(100));
 
-    // Analyze with AI
-    let prompt = state.custom_prompt.as_deref()
-        .unwrap_or("Analyze this screenshot in detail. Describe what you see, including any text, UI elements, data, or important information. Be comprehensive and specific.");
+    // Use the question if provided, otherwise use custom prompt
+    let question_to_ask = state.custom_question.as_deref()
+        .or(state.custom_prompt.as_deref());
 
     let analysis = state
         .ai_client
-        .analyze_image(&screenshot_data, prompt)
+        .analyze_image(&screenshot_data, question_to_ask)
         .await?;
 
     pb.finish_and_clear();

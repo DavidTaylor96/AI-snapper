@@ -32,6 +32,10 @@ struct Args {
     #[arg(long)]
     prompt: Option<String>,
 
+    /// Ask a specific question about the screenshot
+    #[arg(long, short)]
+    question: Option<String>,
+
     /// Enable debug logging
     #[arg(long)]
     debug: bool,
@@ -49,6 +53,8 @@ enum Commands {
     Test,
     /// Debug hotkey detection (NEW)
     TestHotkey,
+    /// Solve coding problem on screen
+    Solve,
 }
 
 #[tokio::main]
@@ -70,13 +76,14 @@ async fn main() -> Result<()> {
         anyhow::anyhow!("API key required. Set AI_API_KEY environment variable or use --api-key")
     })?;
 
-    // Initialize components
-    let ai_client = AIClient::new(&args.provider, &api_key)?;
+    // Initialize components - provider parameter is ignored now (always uses OpenAI)
+    let ai_client = AIClient::new("openai", &api_key)?;
     let screenshot_capture = ScreenshotCapture::new()?;
     let app_state = Arc::new(AppState {
         ai_client,
         screenshot_capture,
         config,
+        custom_question: args.question,
         custom_prompt: args.prompt,
     });
 
@@ -86,6 +93,7 @@ async fn main() -> Result<()> {
         Some(Commands::Config) => show_config(app_state).await,
         Some(Commands::Test) => test_ai_connection(app_state).await,
         Some(Commands::TestHotkey) => unreachable!(), // Handled above
+        Some(Commands::Solve) => solve_coding_problem(app_state).await,
         None => run_daemon(app_state).await,
     }
 }
@@ -94,6 +102,7 @@ struct AppState {
     ai_client: AIClient,
     screenshot_capture: ScreenshotCapture,
     config: AppConfig,
+    custom_question: Option<String>,
     custom_prompt: Option<String>,
 }
 
@@ -102,6 +111,9 @@ async fn run_daemon(state: Arc<AppState>) -> Result<()> {
 
     info!("🚀 AI Screenshot Analyzer is running");
     println!("Press Cmd+Shift+Space to capture and analyze screenshot");
+    if let Some(question) = &state.custom_question {
+        println!("📝 Active question: {}", question);
+    }
     println!("Press Ctrl+C to exit");
 
     // Initialize and start hotkey monitoring
@@ -139,13 +151,13 @@ async fn capture_once(state: Arc<AppState>) -> Result<()> {
     pb.set_message("Processing with AI...");
     pb.enable_steady_tick(std::time::Duration::from_millis(100));
 
-    // Analyze with AI
-    let prompt = state.custom_prompt.as_deref()
-        .unwrap_or("Analyze this screenshot in detail. Describe what you see, including any text, UI elements, data, or important information. Be comprehensive and specific.");
+    // Use the question if provided, otherwise use custom prompt or default
+    let question_to_ask = state.custom_question.as_deref()
+        .or(state.custom_prompt.as_deref());
 
     let analysis = state
         .ai_client
-        .analyze_image(&screenshot_data, prompt)
+        .analyze_image(&screenshot_data, question_to_ask)
         .await?;
 
     pb.finish_and_clear();
@@ -182,7 +194,7 @@ async fn test_ai_connection(state: Arc<AppState>) -> Result<()> {
 
     match state
         .ai_client
-        .analyze_image(&buffer, "Test connection")
+        .analyze_image(&buffer, Some("Test connection"))
         .await
     {
         Ok(_) => {
@@ -214,5 +226,44 @@ async fn test_hotkey_detection() -> Result<()> {
     let monitor = HotkeyMonitor::new();
     monitor.test_key_detection()?;
     
+    Ok(())
+}
+
+// NEW: Solve coding problem function
+async fn solve_coding_problem(state: Arc<AppState>) -> Result<()> {
+    ui::print_header();
+    
+    println!("🧩 Coding Problem Solver");
+    println!("━━━━━━━━━━━━━━━━━━━━━━━");
+    
+    ui::print_status("📸 Capturing screen for coding problem...");
+
+    // Capture screenshot
+    let screenshot_data = state.screenshot_capture.capture().await?;
+
+    ui::print_status("🤖 Analyzing and solving...");
+
+    // Create progress indicator
+    let pb = indicatif::ProgressBar::new_spinner();
+    pb.set_message("Solving coding problem...");
+    pb.enable_steady_tick(std::time::Duration::from_millis(100));
+
+    // Use a specific prompt for solving coding problems
+    let solve_prompt = "This appears to be a coding challenge or problem. Please:\n\
+                       1. Briefly explain what the problem asks for\n\
+                       2. Provide a complete, working solution\n\
+                       3. Include any edge cases the solution handles\n\
+                       Keep it concise and focus on the solution.";
+
+    let analysis = state
+        .ai_client
+        .analyze_image(&screenshot_data, Some(solve_prompt))
+        .await?;
+
+    pb.finish_and_clear();
+
+    // Display results
+    ui::print_analysis_result(&analysis);
+
     Ok(())
 }
