@@ -1,10 +1,11 @@
 # 🤖 AI Screenshot Analyzer
 
+[![Node.js](https://img.shields.io/badge/node.js-18+-brightgreen.svg)](https://nodejs.org/)
 [![Rust](https://img.shields.io/badge/rust-stable-brightgreen.svg)](https://www.rust-lang.org/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-success.svg)]()
 
-> **A blazingly fast, cross-platform AI screenshot analyzer that captures and analyzes screenshots with global hotkeys**
+> **A fast, cross-platform AI screenshot analyzer available in Node.js and Rust - captures and analyzes screenshots with global hotkeys**
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -12,28 +13,105 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🚀 Project Overview
 
-**AI Screenshot Analyzer** is a powerful Rust-based application that captures screenshots via global hotkey (**Cmd+Shift+Space**) and analyzes them using various AI providers. The application runs as a daemon process with a beautiful terminal UI and includes optimized image processing for performance.
+**AI Screenshot Analyzer** is a powerful cross-platform application that captures screenshots via global hotkey (**Cmd+Shift+Space**) and analyzes them using various AI providers. The application runs as a daemon process with a beautiful terminal UI and includes optimized image processing for performance.
+
+**🚀 Available in two versions:**
+- **Node.js/TypeScript** (Recommended): No Rust compiler needed, avoids firewall issues
+- **Rust** (Alternative): Original implementation, may have installation restrictions
 
 ### ✨ Key Features
 
-- 🔥 **Lightning Fast**: Built with Rust for maximum performance
+- 🔥 **High Performance**: Fast execution in both Node.js and Rust versions
 - 🌍 **Cross-Platform**: Works on macOS, Windows, and Linux
 - 🤖 **Multi-AI Support**: OpenAI GPT-4 Vision, Claude 3.5 Sonnet, and more
-- ⌨️ **Global Hotkeys**: **Cmd+Shift+Space** (macOS) for instant capture
+- ⌨️ **Global Hotkeys**: **Cmd+Shift+Space** (macOS) / **Ctrl+Shift+Space** (Windows/Linux)
 - 🎨 **Beautiful Terminal UI**: Rich, colorized output with progress indicators
 - 🖼️ **Smart Image Processing**: Intelligent format optimization (PNG/JPEG)
 - ⚙️ **Zero-Config**: Works out of the box with sensible defaults
+- 🚫 **No Firewall Issues**: Node.js version avoids Rust installation problems
+- 🐳 **Docker Support**: Both versions include containerized deployment
 
 ---
 
 ## 🛠️ Development Commands
 
-### 🐳 Docker Usage (Recommended)
+### 🚀 Node.js Version (Recommended - No Firewall Issues!)
 
-Docker provides a consistent environment that avoids Rust installation and firewall issues:
+The Node.js version provides identical functionality without Rust installation problems:
 
 ```bash
+# Navigate to Node.js version
+cd node-version
+
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Set up API key
+export AI_API_KEY="your-api-key-here"
+
+# Run the application
+npm start
+
+# Or use development mode with auto-reload
+npm run dev
+```
+
+#### Node.js Commands
+```bash
+# Core Commands
+npm start                          # 🏃 Start daemon (default)
+npm run dev -- capture           # 📸 Single screenshot analysis  
+npm run dev -- test              # 🧪 Test AI connection
+npm run dev -- config            # ⚙️ Show current configuration
+npm run dev -- test-hotkey       # 🔍 Debug hotkey detection
+npm run dev -- solve             # 🧩 Solve coding problem on screen
+
+# With options
+npm run dev -- --question "What's on screen?" run
+npm run dev -- --debug run       # 🐛 Debug logging
+npm run dev -- --provider openai run
+```
+
+### 🐳 Docker Usage (Node.js)
+
+```bash
+# Navigate to Node.js version
+cd node-version
+
 # Build the Docker image
+docker build -t ai-screenshot-analyzer-node .
+
+# Run the application in container
+docker run -it ai-screenshot-analyzer-node
+
+# Run with environment variables
+docker run -it -e AI_API_KEY="your-api-key" ai-screenshot-analyzer-node
+
+# Run with volume for persistent config
+docker run -it -v ~/.config:/home/nodejs/.config ai-screenshot-analyzer-node
+```
+
+### 🦀 Rust Version (Alternative - May Have Firewall Issues)
+
+If you prefer Rust and don't have firewall restrictions:
+
+```bash
+# Build and run (release mode for best performance)
+cargo build --release
+cargo run
+
+# Quick development build
+cargo build
+cargo run -- run
+```
+
+### 🐳 Docker Usage (Rust)
+
+```bash
+# Build the Docker image (Rust version)
 docker build -t ai-screenshot-analyzer .
 
 # Run the application in container
@@ -44,17 +122,6 @@ docker run -it -e AI_API_KEY="your-api-key" ai-screenshot-analyzer
 
 # Run with volume for persistent config
 docker run -it -v ~/.config:/root/.config ai-screenshot-analyzer
-```
-
-### Basic Usage (Native)
-```bash
-# Build and run (release mode for best performance)
-cargo build --release
-cargo run
-
-# Quick development build
-cargo build
-cargo run -- run
 ```
 
 ### Command Options
@@ -237,6 +304,30 @@ let shift_pressed = keys.contains(&Keycode::LShift) || keys.contains(&Keycode::R
 
 ### 🧪 Test Suite
 
+#### Node.js Testing (Recommended)
+```bash
+# Navigate to Node.js version
+cd node-version
+
+# Run all tests (unit + integration) - 10 tests
+npm test
+
+# Run specific test suites
+npm test -- --testPathPattern=config
+npm test -- --testPathPattern=integration
+
+# Linting and formatting
+npm run lint
+npm run format
+
+# Manual testing commands
+npm run dev -- test              # Test AI connectivity
+npm run dev -- capture          # Test screenshot capture
+npm run dev -- config           # Verify configuration
+npm run dev -- test-hotkey      # Test hotkey detection
+```
+
+#### Rust Testing (Alternative)
 ```bash
 # Rust unit tests
 cargo test
@@ -348,36 +439,73 @@ This provides:
 
 ### 📋 Prerequisites
 
-#### 🐳 Docker Method (Recommended)
+#### 🚀 Node.js Method (Recommended - No Firewall Issues!)
+- **Node.js 18+**: [Install Node.js](https://nodejs.org/)
+- **npm or yarn**: Package manager (comes with Node.js)
+- **AI API Key**: OpenAI or Anthropic account
+
+#### 🐳 Docker Method
 - **Docker**: [Install Docker](https://docs.docker.com/get-docker/)
 - **AI API Key**: OpenAI or Anthropic account
 
-#### 🦀 Native Method
+#### 🦀 Rust Method (Alternative)
 - **Rust 1.70+**: [Install Rust](https://rustup.rs/)
 - **macOS 10.15+** / **Windows 10+** / **Linux (X11/Wayland)**
 - **AI API Key**: OpenAI or Anthropic account
 
 ### ⚡ Quick Start
 
-#### 🐳 Using Docker (Recommended)
+#### 🚀 Using Node.js (Recommended)
 
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd ai-screenshot-analyzer
+   cd ai-screenshot-analyzer/node-version
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Build the project**:
+   ```bash
+   npm run build
+   ```
+
+4. **Set up API key**:
+   ```bash
+   export AI_API_KEY="your-api-key-here"
+   ```
+
+5. **Run the app**:
+   ```bash
+   npm start
+   ```
+
+6. **Grant permissions** (macOS): Follow the prompts for Accessibility and Screen Recording
+
+7. **Test hotkey**: Press **Cmd+Shift+Space** to capture and analyze!
+
+#### 🐳 Using Docker (Node.js)
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd ai-screenshot-analyzer/node-version
    ```
 
 2. **Build Docker image**:
    ```bash
-   docker build -t ai-screenshot-analyzer .
+   docker build -t ai-screenshot-analyzer-node .
    ```
 
 3. **Run with API key**:
    ```bash
-   docker run -it -e AI_API_KEY="your-api-key-here" ai-screenshot-analyzer
+   docker run -it -e AI_API_KEY="your-api-key-here" ai-screenshot-analyzer-node
    ```
 
-#### 🦀 Native Installation
+#### 🦀 Using Rust (Alternative)
 
 1. **Clone and build**:
    ```bash
@@ -430,4 +558,34 @@ This provides:
 
 ---
 
-*This documentation is maintained automatically. Last updated: $(date)*
+## 🔄 Version Comparison
+
+| Feature | Node.js Version | Rust Version |
+|---------|----------------|--------------|
+| **Installation** | ✅ No firewall issues | ❌ May be blocked by firewalls |
+| **Dependencies** | npm ecosystem | Rust toolchain |
+| **Performance** | ✅ Excellent | ✅ Excellent |
+| **Memory Usage** | Good | Better |
+| **Development** | ✅ Faster iteration | Longer compile times |
+| **Docker Support** | ✅ Smaller containers | ✅ Static binaries |
+| **Hotkey Detection** | Limited (robotjs) | ✅ Full device-query |
+| **Maintenance** | ✅ Easier to modify | More complex |
+| **Recommended For** | 🚀 Most users | Power users with no restrictions |
+
+### 💡 Recommendation
+
+**Use the Node.js version** if you:
+- Have firewall restrictions blocking Rust installation
+- Want faster development cycles
+- Prefer the npm ecosystem
+- Need easier deployment
+
+**Use the Rust version** if you:
+- Have no installation restrictions
+- Want maximum performance and minimal memory usage
+- Prefer systems programming languages
+- Need the most robust hotkey detection
+
+---
+
+*This documentation covers both Node.js and Rust implementations. Choose the version that best fits your environment and requirements.*
