@@ -1,6 +1,5 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-// Removed global-hotkey dependency - now using device_query approach
 use std::sync::Arc;
 use tracing::info;
 
@@ -48,19 +47,24 @@ enum Commands {
     Config,
     /// Test AI connection
     Test,
+    /// Debug hotkey detection (NEW)
+    TestHotkey,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Environment variables are loaded automatically by clap
-
     let args = Args::parse();
 
     // Initialize logging
     let log_level = if args.debug { "debug" } else { "info" };
     tracing_subscriber::fmt().with_env_filter(log_level).init();
 
-    // Load configuration
+    // For hotkey test, we don't need full initialization
+    if matches!(args.command, Some(Commands::TestHotkey)) {
+        return test_hotkey_detection().await;
+    }
+
+    // Load configuration for other commands
     let config = AppConfig::load()?;
     let api_key = args.api_key.or(config.api_key.clone()).ok_or_else(|| {
         anyhow::anyhow!("API key required. Set AI_API_KEY environment variable or use --api-key")
@@ -81,6 +85,7 @@ async fn main() -> Result<()> {
         Some(Commands::Capture) => capture_once(app_state).await,
         Some(Commands::Config) => show_config(app_state).await,
         Some(Commands::Test) => test_ai_connection(app_state).await,
+        Some(Commands::TestHotkey) => unreachable!(), // Handled above
         None => run_daemon(app_state).await,
     }
 }
@@ -118,8 +123,6 @@ async fn run_daemon(state: Arc<AppState>) -> Result<()> {
 
     Ok(())
 }
-
-// handle_screenshot_request moved to hotkey_monitor.rs
 
 async fn capture_once(state: Arc<AppState>) -> Result<()> {
     ui::print_header();
@@ -191,4 +194,25 @@ async fn test_ai_connection(state: Arc<AppState>) -> Result<()> {
             Err(e)
         }
     }
+}
+
+// NEW: Hotkey detection test function
+async fn test_hotkey_detection() -> Result<()> {
+    ui::print_header();
+    
+    println!("🧪 Hotkey Detection Test");
+    println!("━━━━━━━━━━━━━━━━━━━━━━━");
+    println!("This will test if your system can detect the Cmd+Shift+Space combination.");
+    println!();
+    
+    // Check platform
+    println!("🔍 Platform: {}", std::env::consts::OS);
+    
+    // Test basic device_query functionality
+    println!("📋 Testing device_query library...");
+    
+    let monitor = HotkeyMonitor::new();
+    monitor.test_key_detection()?;
+    
+    Ok(())
 }

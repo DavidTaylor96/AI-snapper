@@ -1,16 +1,19 @@
 use anyhow::Result;
 use device_query::{DeviceQuery, DeviceState, Keycode};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::{thread, time::Duration};
-use tracing::{debug, info, warn};
+use tracing::{debug, info, warn, error};
+use tokio::sync::mpsc;
 
 use crate::{ui, AppState};
 
 static IS_MONITORING: AtomicBool = AtomicBool::new(false);
+static LAST_TRIGGER_TIME: AtomicU64 = AtomicU64::new(0);
 
 pub struct HotkeyMonitor {
     is_running: Arc<AtomicBool>,
+    trigger_sender: Option<mpsc::UnboundedSender<()>>,
 }
 
 impl Default for HotkeyMonitor {
@@ -23,6 +26,7 @@ impl HotkeyMonitor {
     pub fn new() -> Self {
         Self {
             is_running: Arc::new(AtomicBool::new(false)),
+            trigger_sender: None,
         }
     }
 
@@ -32,89 +36,236 @@ impl HotkeyMonitor {
             return Ok(());
         }
 
-        info!("🎹 Starting device_query hotkey monitoring (Cmd+Shift+Space)");
+        // Create a channel for communication between the thread and async runtime
+        let (trigger_sender, mut trigger_receiver) = mpsc::unbounded_channel::<()>();
+        self.trigger_sender = Some(trigger_sender.clone());
+
+        // Test device_query availability first
+        let device_state = DeviceState::new();
+        let initial_keys = device_state.get_keys();
+        info!("🔧 Device query initialized, current keys: {:?}", initial_keys);
+
+        info!("🎹 Starting enhanced hotkey monitoring (Cmd+Shift+Space)");
+        info!("🔍 Detected platform: {}", std::env::consts::OS);
 
         IS_MONITORING.store(true, Ordering::SeqCst);
         self.is_running.store(true, Ordering::SeqCst);
 
         let is_running = Arc::clone(&self.is_running);
 
-        // Start device_query monitoring thread
+        // Start the async handler task
+        let state_for_handler = Arc::clone(&state);
+        tokio::spawn(async move {
+            while let Some(_) = trigger_receiver.recv().await {
+                if let Err(e) = handle_hotkey_trigger(Arc::clone(&state_for_handler)).await {
+                    error!("Hotkey trigger failed: {}", e);
+                }
+            }
+        });
+
+        // Enhanced monitoring thread with better error handling
         thread::spawn(move || {
             let device_state = DeviceState::new();
-            let mut last_activation = std::time::Instant::now();
-            let debounce_time = Duration::from_millis(1000);
+            let debounce_time = Duration::from_millis(500); // Reduced debounce time
+            let poll_interval = Duration::from_millis(50); // Faster polling
+            
+            // Track key states for better edge detection
+            let mut last_keys: Vec<Keycode> = Vec::new();
+            let mut combo_start_time: Option<std::time::Instant> = None;
+            let mut status_log_interval = std::time::Instant::now();
 
-            info!("🔄 Device query hotkey listener started");
-            debug!("📋 Monitoring for hotkey: Cmd+Shift+Space (Meta+Shift+Space)");
+            info!("🔄 Enhanced hotkey listener started");
+            debug!("📋 Monitoring hotkey: Cmd+Shift+Space with edge detection");
 
             while is_running.load(Ordering::SeqCst) && IS_MONITORING.load(Ordering::SeqCst) {
-                // Log periodic status to confirm monitoring is active
-                static mut LAST_STATUS_LOG: Option<std::time::Instant> = None;
                 let now = std::time::Instant::now();
-                unsafe {
-                    if LAST_STATUS_LOG.map_or(true, |last| {
-                        now.duration_since(last) >= Duration::from_secs(30)
-                    }) {
-                        debug!("🔍 Hotkey monitoring active - polling keys...");
-                        LAST_STATUS_LOG = Some(now);
-                    }
+                
+                // Periodic status logging
+                if now.duration_since(status_log_interval) >= Duration::from_secs(30) {
+                    debug!("🔍 Hotkey monitoring active - enhanced polling...");
+                    status_log_interval = now;
                 }
 
-                let keys: Vec<Keycode> = device_state.get_keys();
+                // Get current key state
+                let current_keys: Vec<Keycode> = device_state.get_keys();
 
-                if !keys.is_empty() {
-                    debug!("🎹 Keys detected: {:?}", keys);
+                // Detect key state changes
+                let keys_changed = current_keys != last_keys;
+                
+                if keys_changed && !current_keys.is_empty() {
+                    debug!("🎹 Key state changed: {:?}", current_keys);
+                }
 
-                    // Check for Cmd+Shift+Space combination
-                    let space_pressed = keys.contains(&Keycode::Space);
-                    let meta_pressed =
-                        keys.contains(&Keycode::LMeta) || keys.contains(&Keycode::RMeta); // Cmd key on macOS
-                    let shift_pressed =
-                        keys.contains(&Keycode::LShift) || keys.contains(&Keycode::RShift);
+                // Check for our specific combination
+                let space_pressed = current_keys.contains(&Keycode::Space);
+                let meta_pressed = current_keys.contains(&Keycode::LMeta) 
+                    || current_keys.contains(&Keycode::RMeta)
+                    || current_keys.contains(&Keycode::Command); // Add Command key variant
+                let shift_pressed = current_keys.contains(&Keycode::LShift) 
+                    || current_keys.contains(&Keycode::RShift);
 
-                    if space_pressed && meta_pressed && shift_pressed {
-                        debug!("⬇️ Hotkey combination detected, checking debounce...");
-                        let time_since_last = now.duration_since(last_activation);
-                        debug!(
-                            "⏱️ Time since last activation: {:?} (debounce: {:?})",
-                            time_since_last, debounce_time
-                        );
+                // Enhanced detection logic
+                let combo_active = space_pressed && meta_pressed && shift_pressed;
+                let combo_was_active = last_keys.contains(&Keycode::Space) 
+                    && (last_keys.contains(&Keycode::LMeta) 
+                        || last_keys.contains(&Keycode::RMeta)
+                        || last_keys.contains(&Keycode::Command)) // Add Command key variant
+                    && (last_keys.contains(&Keycode::LShift) 
+                        || last_keys.contains(&Keycode::RShift));
 
-                        if time_since_last >= debounce_time {
-                            last_activation = now;
-                            info!("🔥 Global hotkey triggered: Cmd+Shift+Space - starting screenshot capture");
-
-                            // Trigger screenshot analysis
-                            let state_clone = Arc::clone(&state);
-                            tokio::spawn(async move {
-                                if let Err(e) = handle_hotkey_trigger(state_clone).await {
-                                    tracing::error!("Hotkey trigger failed: {}", e);
-                                }
-                            });
+                // Detect combo activation (edge detection)
+                if combo_active && !combo_was_active {
+                    debug!("⬇️ Hotkey combo started (edge detected)");
+                    combo_start_time = Some(now);
+                } else if combo_active && combo_start_time.is_some() {
+                    // Combo is being held - check if held long enough
+                    let hold_duration = now.duration_since(combo_start_time.unwrap());
+                    if hold_duration >= Duration::from_millis(100) {
+                        debug!("⏱️ Hotkey combo held for {:?}, checking debounce...", hold_duration);
+                        
+                        // Check debounce
+                        let last_trigger = LAST_TRIGGER_TIME.load(Ordering::SeqCst);
+                        let last_trigger_instant = std::time::UNIX_EPOCH + Duration::from_millis(last_trigger);
+                        let system_time = std::time::SystemTime::now();
+                        
+                        let should_trigger = if last_trigger == 0 {
+                            true
                         } else {
-                            debug!("⚡ Hotkey press ignored due to debounce (too soon after last activation)");
+                            system_time.duration_since(last_trigger_instant)
+                                .map(|d| d >= debounce_time)
+                                .unwrap_or(true)
+                        };
+
+                        if should_trigger {
+                            let current_time = system_time.duration_since(std::time::UNIX_EPOCH)
+                                .unwrap_or_default().as_millis() as u64;
+                            LAST_TRIGGER_TIME.store(current_time, Ordering::SeqCst);
+                            
+                            info!("🔥 Global hotkey triggered: Cmd+Shift+Space (enhanced detection)");
+                            
+                            // Reset combo tracking
+                            combo_start_time = None;
+
+                            // Send trigger signal through channel
+                            if let Err(e) = trigger_sender.send(()) {
+                                error!("Failed to send hotkey trigger: {}", e);
+                            }
+                        } else {
+                            debug!("⚡ Hotkey trigger ignored due to debounce");
+                        }
+                    }
+                } else if !combo_active && combo_was_active {
+                    debug!("⬆️ Hotkey combo released");
+                    combo_start_time = None;
+                }
+
+                // Alternative detection method for debugging
+                if keys_changed && current_keys.len() >= 3 {
+                    let key_names: Vec<String> = current_keys.iter()
+                        .map(|k| format!("{:?}", k))
+                        .collect();
+                    debug!("🔍 Multiple keys pressed: {}", key_names.join("+"));
+                    
+                    // Check for common macOS variations
+                    let has_cmd = current_keys.iter().any(|k| matches!(k, 
+                        Keycode::LMeta | Keycode::RMeta | Keycode::Command));
+                    let has_shift = current_keys.iter().any(|k| matches!(k, 
+                        Keycode::LShift | Keycode::RShift));
+                    let has_space = current_keys.contains(&Keycode::Space);
+                    
+                    if has_cmd && has_shift && has_space {
+                        debug!("🎯 Detected Cmd+Shift+Space pattern with alternative detection");
+                        // Since we detected it here, let's also trigger it
+                        info!("🔥 Global hotkey triggered via alternative detection: Cmd+Shift+Space");
+                        
+                        // Check debounce for this alternative detection too
+                        let last_trigger = LAST_TRIGGER_TIME.load(Ordering::SeqCst);
+                        let system_time = std::time::SystemTime::now();
+                        
+                        let should_trigger = if last_trigger == 0 {
+                            true
+                        } else {
+                            let last_trigger_instant = std::time::UNIX_EPOCH + Duration::from_millis(last_trigger);
+                            system_time.duration_since(last_trigger_instant)
+                                .map(|d| d >= debounce_time)
+                                .unwrap_or(true)
+                        };
+
+                        if should_trigger {
+                            let current_time = system_time.duration_since(std::time::UNIX_EPOCH)
+                                .unwrap_or_default().as_millis() as u64;
+                            LAST_TRIGGER_TIME.store(current_time, Ordering::SeqCst);
+
+                            // Send trigger signal through channel
+                            if let Err(e) = trigger_sender.send(()) {
+                                error!("Failed to send hotkey trigger: {}", e);
+                            }
                         }
                     }
                 }
 
-                thread::sleep(Duration::from_millis(100));
+                last_keys = current_keys;
+                thread::sleep(poll_interval);
             }
 
-            info!("🛑 Device query hotkey listener stopped");
+            info!("🛑 Enhanced hotkey listener stopped");
         });
 
         Ok(())
     }
 
     pub fn stop_monitoring(&mut self) {
-        info!("🛑 Stopping device_query hotkey monitoring");
+        info!("🛑 Stopping enhanced hotkey monitoring");
         IS_MONITORING.store(false, Ordering::SeqCst);
         self.is_running.store(false, Ordering::SeqCst);
+        self.trigger_sender = None;
     }
 
     pub fn is_monitoring(&self) -> bool {
         IS_MONITORING.load(Ordering::SeqCst)
+    }
+
+    // Test method to verify hotkey detection
+    pub fn test_key_detection(&self) -> Result<()> {
+        info!("🧪 Testing key detection capabilities...");
+        
+        let device_state = DeviceState::new();
+        
+        println!("Press and hold Cmd+Shift+Space for 3 seconds to test detection...");
+        println!("Press Ctrl+C to cancel test");
+        
+        let start_time = std::time::Instant::now();
+        let test_duration = Duration::from_secs(10);
+        
+        while start_time.elapsed() < test_duration {
+            let keys = device_state.get_keys();
+            
+            if !keys.is_empty() {
+                let key_names: Vec<String> = keys.iter()
+                    .map(|k| format!("{:?}", k))
+                    .collect();
+                println!("Keys detected: {}", key_names.join("+"));
+                
+                let space_pressed = keys.contains(&Keycode::Space);
+                let meta_pressed = keys.contains(&Keycode::LMeta) 
+                    || keys.contains(&Keycode::RMeta)
+                    || keys.contains(&Keycode::Command); // Add Command key variant
+                let shift_pressed = keys.contains(&Keycode::LShift) 
+                    || keys.contains(&Keycode::RShift);
+                
+                if space_pressed && meta_pressed && shift_pressed {
+                    println!("✅ SUCCESS: Cmd+Shift+Space detected!");
+                    return Ok(());
+                }
+            }
+            
+            thread::sleep(Duration::from_millis(100));
+        }
+        
+        println!("❌ Test completed - Cmd+Shift+Space not detected");
+        println!("This suggests the hotkey detection has issues on your system");
+        
+        Ok(())
     }
 }
 
@@ -126,8 +277,6 @@ impl Drop for HotkeyMonitor {
 
 async fn handle_hotkey_trigger(state: Arc<AppState>) -> Result<()> {
     info!("🚀 Processing hotkey trigger - starting screenshot capture");
-
-    // Use ui module functions directly
 
     ui::print_status("📸 Capturing screenshot...");
 
