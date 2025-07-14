@@ -28,7 +28,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🛠️ Development Commands
 
-### Basic Usage
+### 🐳 Docker Usage (Recommended)
+
+Docker provides a consistent environment that avoids Rust installation and firewall issues:
+
+```bash
+# Build the Docker image
+docker build -t ai-screenshot-analyzer .
+
+# Run the application in container
+docker run -it ai-screenshot-analyzer
+
+# Run with environment variables
+docker run -it -e AI_API_KEY="your-api-key" ai-screenshot-analyzer
+
+# Run with volume for persistent config
+docker run -it -v ~/.config:/root/.config ai-screenshot-analyzer
+```
+
+### Basic Usage (Native)
 ```bash
 # Build and run (release mode for best performance)
 cargo build --release
@@ -330,11 +348,36 @@ This provides:
 
 ### 📋 Prerequisites
 
+#### 🐳 Docker Method (Recommended)
+- **Docker**: [Install Docker](https://docs.docker.com/get-docker/)
+- **AI API Key**: OpenAI or Anthropic account
+
+#### 🦀 Native Method
 - **Rust 1.70+**: [Install Rust](https://rustup.rs/)
 - **macOS 10.15+** / **Windows 10+** / **Linux (X11/Wayland)**
 - **AI API Key**: OpenAI or Anthropic account
 
 ### ⚡ Quick Start
+
+#### 🐳 Using Docker (Recommended)
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd ai-screenshot-analyzer
+   ```
+
+2. **Build Docker image**:
+   ```bash
+   docker build -t ai-screenshot-analyzer .
+   ```
+
+3. **Run with API key**:
+   ```bash
+   docker run -it -e AI_API_KEY="your-api-key-here" ai-screenshot-analyzer
+   ```
+
+#### 🦀 Native Installation
 
 1. **Clone and build**:
    ```bash
