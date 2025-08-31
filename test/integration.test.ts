@@ -60,7 +60,7 @@ describe('Integration Tests', () => {
                 const { stdout } = await execAsync(`node ${binaryPath} capture`, { timeout: 30000 });
                 expect(stdout).toContain('📸 Capturing screenshot...');
                 expect(stdout).toContain('🤖 Analyzing with AI...');
-                expect(stdout).toContain('ChatGPT Analysis');
+                expect(stdout).toContain('Claude Analysis');
             } catch (error) {
                 // Screenshot capture might fail without proper permissions
                 console.log('Screenshot capture test skipped due to permissions or API key');
@@ -75,7 +75,7 @@ describe('Integration Tests', () => {
                 expect(stdout || stderr).toContain('AI connection failed');
             } catch (error) {
                 // This is expected behavior - the error message should contain API key error
-                expect((error as Error).message).toContain('OpenAI API error');
+                expect((error as Error).message).toContain('Claude API error');
             }
         }, timeout);
     });

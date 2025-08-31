@@ -24,11 +24,13 @@
   "author": "David Taylor",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
     "@jitsi/robotjs": "^0.6.16",
     "axios": "^1.6.0",
     "chalk": "^5.3.0",
     "commander": "^11.0.0",
     "form-data": "^4.0.0",
+    "node-global-key-listener": "^0.3.0",
     "ora": "^7.0.1",
     "screenshot-desktop": "^1.15.1",
     "sharp": "^0.32.0",

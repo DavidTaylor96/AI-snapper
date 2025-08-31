@@ -28,7 +28,7 @@ export class AppConfig {
         this.jpegQuality = config.jpegQuality || 95;
         this.maxImageSizeMb = config.maxImageSizeMb || 10;
         this.apiKey = config.apiKey;
-        this.defaultProvider = config.defaultProvider || 'openai';
+        this.defaultProvider = config.defaultProvider || 'claude';
     }
 
     static async load(): Promise<AppConfig> {

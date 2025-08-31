@@ -31,7 +31,7 @@ describe('AppConfig', () => {
     expect(config.imageFormat).toBe('png');
     expect(config.jpegQuality).toBe(95);
     expect(config.maxImageSizeMb).toBe(10);
-    expect(config.defaultProvider).toBe('openai');
+    expect(config.defaultProvider).toBe('claude');
     expect(config.screenshotsDir).toContain('.ai-screenshots');
   });
 
@@ -64,6 +64,6 @@ describe('AppConfig', () => {
     expect(config.imageFormat).toBe('jpeg');
     expect(config.jpegQuality).toBe(85);
     expect(config.maxImageSizeMb).toBe(10); // default
-    expect(config.defaultProvider).toBe('openai'); // default
+    expect(config.defaultProvider).toBe('claude'); // default
   });
 });
