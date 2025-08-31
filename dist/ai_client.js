@@ -25,12 +25,12 @@ class AIClient {
             // Detect image format for proper MIME type
             const mimeType = this.detectImageFormat(imageData);
             // Create the enhanced prompt
-            const prompt = this.createEnhancedPrompt(userQuestion);
+            const prompt = this.createConcisePrompt(userQuestion);
             const response = await this.client.messages.create({
                 model: 'claude-3-5-sonnet-20241022',
-                max_tokens: 1000,
+                max_tokens: 500, // Reduced from 1000 for more concise responses
                 temperature: 0.1,
-                system: 'You are an expert programming assistant that analyzes screenshots. When you see a coding challenge or problem, provide a working solution. Always format code in proper markdown blocks. Be concise and focus on practical solutions.',
+                system: 'You are a concise programming assistant. Provide direct, minimal responses. For coding problems, give working code in markdown blocks without extra explanation. For questions, give brief, direct answers.',
                 messages: [
                     {
                         role: 'user',
@@ -55,8 +55,8 @@ class AIClient {
             if (!content || content.type !== 'text') {
                 throw new Error('No text response from Claude');
             }
-            // Format the response for better readability
-            return this.formatResponse(content.text);
+            // Return the raw response without additional formatting
+            return content.text.trim();
         }
         catch (error) {
             if (error instanceof sdk_1.default.APIError) {
@@ -65,63 +65,22 @@ class AIClient {
             throw error;
         }
     }
-    createEnhancedPrompt(userQuestion) {
-        const baseInstruction = 'Please view the screen and analyze what you see.';
+    createConcisePrompt(userQuestion) {
         if (userQuestion && userQuestion.trim()) {
-            return `${baseInstruction} Please answer the following question in the simplest way possible: ${userQuestion.trim()}
+            return `Answer this question directly and concisely: ${userQuestion.trim()}
 
-IMPORTANT: If your answer involves code, please format it in proper markdown code blocks with the appropriate language identifier. Provide clear, working code examples when applicable.`;
+If code is needed, provide it in markdown code blocks without extra explanation.`;
         }
         else {
-            // Default prompt optimized for coding challenges and problems
-            return `${baseInstruction} If this is a coding challenge or problem:
-1. Briefly explain what the code/problem does
-2. Provide a working solution in the same programming language
-3. Format all code in proper markdown code blocks
-4. Keep explanations concise and focused on the solution
+            // Default prompt optimized for direct responses
+            return `Analyze what you see in this image. If it's a coding problem:
+- Provide the working solution in a code block
+- No explanations unless essential
 
-If this is not a coding problem, describe what you see including any text, UI elements, or important information.`;
+If it's not code:
+- Give a brief, direct answer
+- Be concise and to the point`;
         }
-    }
-    formatResponse(content) {
-        // Simplified formatting that's cleaner and easier to read
-        let formatted = '';
-        // Add a simple header
-        formatted += '🤖 Claude Analysis\n';
-        formatted += '─'.repeat(50) + '\n';
-        formatted += '\n';
-        // Process the content to highlight code blocks
-        const lines = content.split('\n');
-        let inCodeBlock = false;
-        for (const line of lines) {
-            if (line.trim().startsWith('```')) {
-                if (!inCodeBlock) {
-                    // Starting a code block - add visual separator
-                    formatted += '\n┌─ CODE SOLUTION ';
-                    if (line.length > 3) {
-                        const lang = line.slice(3).trim().toUpperCase();
-                        if (lang) {
-                            formatted += `(${lang}) `;
-                        }
-                    }
-                    formatted += '─'.repeat(20) + '\n';
-                    formatted += line + '\n';
-                    inCodeBlock = true;
-                }
-                else {
-                    // Ending a code block
-                    formatted += line + '\n';
-                    formatted += '└' + '─'.repeat(45) + '\n';
-                    inCodeBlock = false;
-                }
-            }
-            else {
-                formatted += line + '\n';
-            }
-        }
-        formatted += '\n';
-        formatted += '─'.repeat(50);
-        return formatted;
     }
     detectImageFormat(imageData) {
         if (imageData.length < 8) {

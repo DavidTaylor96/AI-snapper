@@ -5,8 +5,7 @@ export declare class AIClient {
     provider(): string;
     analyzeImage(imageData: Buffer, userQuestion?: string): Promise<string>;
     private analyzeWithClaude;
-    private createEnhancedPrompt;
-    private formatResponse;
+    private createConcisePrompt;
     private detectImageFormat;
 }
 //# sourceMappingURL=ai_client.d.ts.map
