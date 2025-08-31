@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 import { AppConfig } from './config';
 import { AIClient } from './ai_client';
 import { ScreenshotCapture } from './screenshot';

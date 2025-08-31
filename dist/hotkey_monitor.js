@@ -31,7 +31,6 @@ class HotkeyMonitor extends events_1.EventEmitter {
                 const keyName = e.name;
                 if (down && keyName) {
                     this.pressedKeys.add(keyName);
-                    console.debug(`Key pressed: ${keyName}, Current keys: ${Array.from(this.pressedKeys).join(', ')}`);
                     // Check if all required keys are pressed
                     const allKeysPressed = expectedKeys.every(key => this.pressedKeys.has(key) ||
                         this.pressedKeys.has(key.replace('LEFT ', '')) ||
@@ -70,7 +69,6 @@ class HotkeyMonitor extends events_1.EventEmitter {
     shouldTrigger() {
         const now = Date.now();
         if (now - this.lastTriggerTime < this.debounceTime) {
-            console.debug('⚡ Hotkey trigger ignored due to debounce');
             return false;
         }
         this.lastTriggerTime = now;

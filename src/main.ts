@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import 'dotenv/config';
 import { Command } from 'commander';
 import { AppConfig } from './config';
 import { AIClient } from './ai_client';
@@ -214,11 +215,7 @@ async function testAiConnection(state: AppState): Promise<void> {
 
 async function testHotkeyDetection(): Promise<void> {
     printHeader();
-    
-    console.log('🧪 Hotkey Detection Test');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('This will test if your system can detect the Cmd+Shift+Space combination.');
-    console.log();
+
     
     // Check platform
     console.log(`🔍 Platform: ${process.platform}`);
@@ -232,9 +229,6 @@ async function testHotkeyDetection(): Promise<void> {
 
 async function solveCodingProblem(state: AppState): Promise<void> {
     printHeader();
-    
-    console.log('🧩 Coding Problem Solver');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━');
     
     printStatus('📸 Capturing screen for coding problem...');
     

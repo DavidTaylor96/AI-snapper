@@ -2,6 +2,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.main = main;
+require("dotenv/config");
 const commander_1 = require("commander");
 const config_1 = require("./config");
 const ai_client_1 = require("./ai_client");
@@ -176,10 +177,6 @@ async function testAiConnection(state) {
 }
 async function testHotkeyDetection() {
     (0, ui_1.printHeader)();
-    console.log('🧪 Hotkey Detection Test');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('This will test if your system can detect the Cmd+Shift+Space combination.');
-    console.log();
     // Check platform
     console.log(`🔍 Platform: ${process.platform}`);
     // Test basic hotkey functionality
@@ -189,8 +186,6 @@ async function testHotkeyDetection() {
 }
 async function solveCodingProblem(state) {
     (0, ui_1.printHeader)();
-    console.log('🧩 Coding Problem Solver');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━');
     (0, ui_1.printStatus)('📸 Capturing screen for coding problem...');
     // Capture screenshot
     const screenshotData = await state.screenshotCapture.capture();
