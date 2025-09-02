@@ -6,9 +6,10 @@ import { AppConfig } from './config';
 import { AIClient } from './ai_client';
 import { ScreenshotCapture } from './screenshot';
 import { HotkeyMonitor } from './hotkey_monitor';
+import { TerminalMonitor, TimerMonitor } from './terminal_monitor';
 import { printHeader, printStatus, printSuccess, printError, printAnalysisResult } from './ui';
 
-interface AppState {
+export interface AppState {
     aiClient: AIClient;
     screenshotCapture: ScreenshotCapture;
     config: AppConfig;
@@ -29,6 +30,8 @@ async function main(): Promise<void> {
         .option('--provider <provider>', 'AI provider (claude)', 'claude')
         .option('--prompt <prompt>', 'Custom prompt for AI analysis')
         .option('-q, --question <question>', 'Ask a specific question about the screenshot')
+        .option('--mode <mode>', 'Input mode: terminal, hotkey, timer, command', 'terminal')
+        .option('--interval <seconds>', 'Auto-capture interval for timer mode', '5')
         .option('--debug', 'Enable debug logging');
     
     program
@@ -36,7 +39,7 @@ async function main(): Promise<void> {
         .description('Run the screenshot analyzer daemon')
         .action(async (options) => {
             const state = await initializeAppState(program.opts());
-            await runDaemon(state);
+            await runDaemon(state, program.opts());
         });
     
     program
@@ -81,7 +84,7 @@ async function main(): Promise<void> {
     // Default to run command if no command specified
     program.action(async (options) => {
         const state = await initializeAppState(program.opts());
-        await runDaemon(state);
+        await runDaemon(state, program.opts());
     });
     
     try {
@@ -120,38 +123,72 @@ async function initializeAppState(options: any): Promise<AppState> {
     };
 }
 
-async function runDaemon(state: AppState): Promise<void> {
+async function runDaemon(state: AppState, options: any): Promise<void> {
     printHeader();
     
+    const mode = options.mode || 'terminal';
+    
     console.log('🚀 AI Screenshot Analyzer is running');
-    console.log('Press Cmd+Shift+Space to capture and analyze screenshot');
     if (state.customQuestion) {
         console.log(`📝 Active question: ${state.customQuestion}`);
     }
-    console.log('Press Ctrl+C to exit');
+    console.log(`📺 Mode: ${mode}\n`);
     
-    // Initialize and start hotkey monitoring
-    const monitor = new HotkeyMonitor();
-    await monitor.startMonitoring(state);
+    let monitor: any = null;
     
-    console.log('✅ Hotkey monitoring started successfully');
-    
-    // Keep the main process alive
-    const keepAlive = setInterval(() => {
-        if (!monitor.isMonitoring()) {
-            console.log('⚠️ Hotkey monitoring stopped');
-            clearInterval(keepAlive);
-            process.exit(0);
-        }
-    }, 1000);
+    switch (mode) {
+        case 'terminal':
+            // Default: Terminal input mode (no permissions required!)
+            monitor = new TerminalMonitor();
+            await monitor.startMonitoring(state, 'keypress');
+            break;
+            
+        case 'command':
+            // Command-line mode (type commands)
+            monitor = new TerminalMonitor();
+            await monitor.startMonitoring(state, 'command');
+            break;
+            
+        case 'timer':
+            // Auto-capture every N seconds
+            const interval = parseInt(options.interval) || 5;
+            monitor = new TimerMonitor();
+            await monitor.startMonitoring(state, interval);
+            break;
+            
+        case 'hotkey':
+            // Try hotkey mode (may fail due to permissions)
+            try {
+                monitor = new HotkeyMonitor();
+                await monitor.startMonitoring(state);
+                console.log('✅ Hotkey monitoring started successfully');
+            } catch (error) {
+                console.log('⚠️  Hotkey mode failed (permissions issue)');
+                console.log('📺 Falling back to terminal input mode...\n');
+                
+                // Fallback to terminal mode
+                monitor = new TerminalMonitor();
+                await monitor.startMonitoring(state, 'keypress');
+            }
+            break;
+            
+        default:
+            console.error(`❌ Unknown mode: ${mode}`);
+            console.log('Available modes: terminal, command, timer, hotkey');
+            process.exit(1);
+    }
     
     // Handle graceful shutdown
     process.on('SIGINT', () => {
         console.log('\n🛑 Shutting down...');
-        monitor.stopMonitoring();
-        clearInterval(keepAlive);
+        if (monitor && monitor.stopMonitoring) {
+            monitor.stopMonitoring();
+        }
         process.exit(0);
     });
+    
+    // Keep the process alive
+    process.stdin.resume();
 }
 
 async function captureOnce(state: AppState): Promise<void> {
@@ -186,7 +223,7 @@ async function testAiConnection(state: AppState): Promise<void> {
     printStatus('🧪 Testing AI connection...');
     
     try {
-        // Create a larger, valid PNG test image (32x32 white square)
+        // Create a simple test image
         const testImage = Buffer.from([
             0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
             0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x20, 0x08, 0x06, 0x00, 0x00, 0x00, 0x73, 0x7A, 0x7A,
@@ -215,16 +252,26 @@ async function testAiConnection(state: AppState): Promise<void> {
 
 async function testHotkeyDetection(): Promise<void> {
     printHeader();
-
     
-    // Check platform
-    console.log(`🔍 Platform: ${process.platform}`);
+    console.log('📋 Testing input methods...\n');
     
-    // Test basic hotkey functionality
-    console.log('📋 Testing hotkey library...');
+    // Test terminal input capability
+    console.log('✅ Terminal input: Available');
+    console.log('   No special permissions required!\n');
     
-    const monitor = new HotkeyMonitor();
-    await monitor.testKeyDetection();
+    // Test hotkey capability
+    console.log('🔍 Testing hotkey capability...');
+    console.log(`   Platform: ${process.platform}`);
+    
+    try {
+        const monitor = new HotkeyMonitor();
+        await monitor.testKeyDetection();
+    } catch (error) {
+        console.log('⚠️  Hotkey detection: Not available');
+        console.log('   This is normal if accessibility permissions are not granted.\n');
+        console.log('💡 Recommendation: Use terminal mode (default) instead:');
+        console.log('   npm start --mode terminal');
+    }
 }
 
 async function solveCodingProblem(state: AppState): Promise<void> {

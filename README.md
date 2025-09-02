@@ -4,15 +4,16 @@
 [![TypeScript](https://img.shields.io/badge/typescript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Capture screenshots with a global hotkey and analyze them using Claude AI for instant insights and code solutions**
+> **Capture screenshots and analyze them using Claude AI - no special permissions required!**
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (30 Seconds)
 
-### 1. Install Dependencies
+### 1. Install & Build
 ```bash
 npm install
+npm run build
 ```
 
 ### 2. Set Your Claude API Key
@@ -20,111 +21,128 @@ npm install
 export AI_API_KEY="sk-ant-api03-your-claude-api-key"
 ```
 
-### 3. Build and Run
+### 3. Run (No Permissions Needed!)
 ```bash
-npm run build
 npm start
 ```
 
-### 4. Use the Application
-- Press **Cmd+Shift+Space** (macOS) or **Ctrl+Shift+Space** (Windows/Linux)
-- The app will capture your screen and analyze it with Claude AI
-- Results appear in your terminal with formatted code solutions
+### 4. Press Space or Enter to Capture!
+That's it! Just press **Space** or **Enter** in your terminal to capture and analyze your screen.
 
 ---
 
 ## 🎯 How It Works
 
-### The Process
-1. **🔥 Always Running**: The app runs as a background daemon, waiting for your hotkey
-2. **📸 Instant Capture**: Press the hotkey to capture your entire screen
-3. **🤖 AI Analysis**: Your screenshot is sent to Claude AI for analysis
-4. **💡 Smart Results**: Get formatted responses with code solutions, explanations, or insights
-5. **⚡ Ready for More**: The app stays running for your next capture
+### The Magic
+1. **🏃 Run the app** - It waits in your terminal
+2. **⌨️ Press Space/Enter** - No special permissions needed!
+3. **📸 Captures your screen** - Uses native screenshot tools
+4. **🤖 Claude analyzes it** - Get instant insights
+5. **💡 See the results** - Formatted code, explanations, solutions
 
-### What Claude Can Do
-- **📋 Analyze code problems** and provide working solutions
-- **🐛 Debug errors** from screenshots of error messages
-- **📚 Explain code** functionality and patterns
-- **🎨 Describe UI elements** and design patterns
-- **📊 Analyze data** from charts, graphs, or tables
-- **📝 Read text** from any screenshot
-
-### Example Workflow
-```bash
-# Start the app
-npm start
-
-# You'll see:
-🤖 AI Screenshot Analyzer is running
-Press Cmd+Shift+Space to capture and analyze screenshot
-Press Ctrl+C to exit
-
-# Press the hotkey while viewing a coding problem
-# Get instant analysis like:
-
-🤖 Claude Analysis
-──────────────────────────────────────────────────
-
-This appears to be a binary search algorithm implementation with a bug.
-
-┌─ CODE SOLUTION (PYTHON) ────────────────────
-```python
-def binary_search(arr, target):
-    left, right = 0, len(arr) - 1
-    
-    while left <= right:
-        mid = (left + right) // 2
-        if arr[mid] == target:
-            return mid
-        elif arr[mid] < target:
-            left = mid + 1
-        else:
-            right = mid - 1
-    
-    return -1
-```
-└─────────────────────────────────────────────
-
-The original code had an off-by-one error in the while condition.
-──────────────────────────────────────────────────
-```
+### What Can It Do?
+- **🐛 Debug errors** - Screenshot an error, get the fix
+- **📋 Solve coding problems** - Capture leetcode, get solutions
+- **📚 Explain code** - Understand what code does
+- **🎨 Analyze UIs** - Get feedback on designs
+- **📊 Read charts/data** - Extract info from images
+- **📝 OCR text** - Convert screenshots to text
 
 ---
 
-## 📋 Available Commands
+## 📺 Input Modes (Choose Your Style)
 
-### Core Commands
+### 1. **Terminal Mode** (Default - No Permissions!)
 ```bash
-npm start                     # 🏃 Start the daemon (default mode)
-npm run dev                   # 🔄 Development mode with auto-reload
-
-# Alternative commands
-node dist/main.js run         # 🏃 Start daemon
-node dist/main.js capture     # 📸 Single screenshot analysis
-node dist/main.js test        # 🧪 Test Claude API connection
-node dist/main.js config      # ⚙️ Show current configuration
-node dist/main.js solve       # 🧩 Optimized for coding problems
+npm start
+# Just press Space or Enter to capture!
 ```
 
-### Advanced Usage
+**Controls:**
+- `Space` / `Enter` → Capture & Analyze
+- `s` → Solve coding problem
+- `e` → Explain what's on screen  
+- `q` → Ask custom question
+- `h` → Show help
+- `Ctrl+C` → Exit
+
+### 2. **Command Mode** (Type Commands)
 ```bash
-# Ask specific questions
-npm run dev -- --question "What's wrong with this code?" run
-
-# Debug mode with verbose logging
-npm run dev -- --debug run
-
-# Use custom API key
-npm run dev -- --api-key "sk-ant-..." run
+npm start --mode command
+# Type commands like "capture" or "solve"
 ```
 
-### Development Commands
+**Commands:**
+- `capture` or just `Enter` → Capture screen
+- `solve` → Analyze as coding problem
+- `explain` → Describe what's visible
+- `ask <question>` → Ask specific question
+- `repeat` → Repeat last capture
+- `exit` → Quit
+
+### 3. **Timer Mode** (Auto-Capture)
 ```bash
-npm run build                 # 🔨 Build TypeScript
-npm test                      # 🧪 Run tests
-npm run lint                  # 🔍 Check code quality
-npm run format                # ✨ Format code
+npm start --mode timer --interval 5
+# Automatically captures every 5 seconds
+```
+
+**Controls:**
+- `p` → Pause/Resume
+- `n` → Capture now
+- `Ctrl+C` → Exit
+
+### 4. **Hotkey Mode** (Optional - Requires Permissions)
+```bash
+npm start --mode hotkey
+# Falls back to terminal mode if permissions missing
+```
+
+If you have accessibility permissions:
+- **macOS**: `Cmd+Shift+Space`
+- **Windows/Linux**: `Ctrl+Shift+Space`
+
+---
+
+## 💻 Usage Examples
+
+### Basic Capture
+```bash
+# Start and press Space when ready
+npm start
+
+# You'll see:
+📸 Capturing screenshot...
+🤖 Analyzing with AI...
+
+[Claude's analysis appears here]
+```
+
+### Ask Specific Questions
+```bash
+# Start with a question
+npm start -q "What's wrong with this code?"
+
+# Or in interactive mode, press 'q' then type your question
+```
+
+### Solve Coding Problems
+```bash
+# One-shot solve
+npm run solve
+
+# Or in interactive mode, press 's'
+```
+
+### Different Analysis Modes
+```bash
+# Explain what's on screen
+npm start --prompt "Explain this UI design"
+
+# Debug an error
+npm start -q "How do I fix this error?"
+
+# Extract text
+npm start -q "What text is in this image?"
 ```
 
 ---
@@ -133,97 +151,200 @@ npm run format                # ✨ Format code
 
 ### Environment Variables
 ```bash
-# Required: Your Claude API key
+# Required
 AI_API_KEY="sk-ant-api03-your-claude-api-key"
+
+# Optional
+SCREENSHOT_MODE="terminal"  # terminal, command, timer, hotkey
+AUTO_CAPTURE_INTERVAL="5"   # Seconds for timer mode
 ```
 
-### Config File (Optional)
+### Config File
 Location: `~/.config/ai-screenshot-analyzer/config.toml`
 
 ```toml
-# Screenshot storage (temporary)
-screenshots_dir = "/Users/username/.ai-screenshots"
+# Screenshot settings
+screenshots_dir = "~/.ai-screenshots"
+image_format = "png"
+jpeg_quality = 95
+max_image_size_mb = 10
 
-# Image processing
-image_format = "png"          # Default format (png/jpeg)
-jpeg_quality = 95             # Compression quality (1-100)
-max_image_size_mb = 10        # Upload size limit
+# AI settings  
+default_provider = "claude"
 
-# AI provider settings
-default_provider = "claude"   # AI provider
+# Input settings
+default_mode = "terminal"
+auto_capture_interval = 5
 ```
 
 ---
 
-## 🔧 Setup Requirements
+## 🔧 Installation
 
 ### Prerequisites
-- **Node.js 18+**: [Download Node.js](https://nodejs.org/)
-- **Claude API Key**: [Get API key from Anthropic](https://console.anthropic.com/)
+- **Node.js 18+**: [Download](https://nodejs.org/)
+- **Claude API Key**: [Get one](https://console.anthropic.com/)
 
-### macOS Permissions
-The app needs these permissions to work:
+### Install from Source
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/ai-screenshot-analyzer
+cd ai-screenshot-analyzer
 
-1. **🔐 Accessibility Permission**:
-   - Go to `System Preferences → Security & Privacy → Privacy → Accessibility`
-   - Add and enable Terminal (or your terminal app)
+# Install dependencies
+npm install
 
-2. **📺 Screen Recording Permission**:
-   - Go to `System Preferences → Security & Privacy → Privacy → Screen Recording`
-   - Add and enable Terminal (or your terminal app)
+# Build
+npm run build
 
-### Windows/Linux
-- No special permissions required
-- Hotkey: **Ctrl+Shift+Space**
+# Set API key
+export AI_API_KEY="your-api-key"
+
+# Run!
+npm start
+```
+
+### Optional: Global Installation
+```bash
+# Install globally
+npm install -g .
+
+# Run from anywhere
+ai-screenshot-analyzer
+```
+
+### Optional: Create Desktop Shortcut
+```bash
+# macOS
+cat > ~/Desktop/AI-Screenshot.command << 'EOF'
+#!/bin/bash
+cd /path/to/ai-screenshot-analyzer
+npm start
+EOF
+chmod +x ~/Desktop/AI-Screenshot.command
+
+# Windows (create .bat file)
+echo "cd C:\path\to\ai-screenshot-analyzer && npm start" > Desktop\AI-Screenshot.bat
+```
 
 ---
 
 ## 🎨 Features
 
-- ⚡ **Instant Analysis**: Press hotkey → get AI insights in seconds
-- 🖼️ **Smart Image Processing**: Optimized compression for faster uploads
-- 🎯 **Code-Focused**: Specialized prompts for programming problems
-- 🌈 **Beautiful Output**: Formatted terminal display with syntax highlighting
-- 🔄 **Always Ready**: Runs as daemon, no startup delay
-- 💾 **Privacy-First**: Screenshots deleted after analysis
-- 🛡️ **Secure**: API keys never logged or stored insecurely
+### Core Features
+- ⚡ **No Permissions Required** - Works in any terminal
+- 🎯 **Multiple Input Modes** - Terminal, commands, timer, or hotkeys
+- 🖼️ **Smart Compression** - Optimizes images for fast upload
+- 🤖 **Claude 3.5 Sonnet** - Latest AI model for best results
+- 🎨 **Beautiful Output** - Syntax-highlighted code in terminal
+- 🔒 **Privacy-First** - Screenshots deleted after analysis
+- 🌈 **Cross-Platform** - Works on macOS, Windows, Linux
+
+### Advanced Features
+- 📝 **Custom Questions** - Ask specific questions about screenshots
+- 🔄 **Repeat Capture** - Quickly re-analyze with different prompts
+- ⏱️ **Auto-Capture** - Timer mode for presentations/tutorials
+- 🎯 **Specialized Modes** - Optimized for coding, debugging, explaining
+- 📊 **Smart Detection** - Automatically identifies code vs. UI vs. text
 
 ---
 
 ## 🚨 Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| **Hotkey not working** | Check accessibility permissions in System Preferences |
-| **Screenshot fails** | Verify screen recording permissions |
-| **API errors** | Validate your `AI_API_KEY` environment variable |
-| **Build failures** | Run `rm -rf node_modules package-lock.json && npm install` |
+### Common Issues
 
-### Debug Mode
-```bash
-npm run dev -- --debug run
-```
+| Problem | Solution |
+|---------|----------|
+| **"API key required"** | Set `export AI_API_KEY="sk-ant-..."` |
+| **Terminal not responding** | Make sure terminal has focus, try `--mode command` |
+| **Screenshot fails** | Check if `screenshot-desktop` is installed |
+| **"Cannot find module"** | Run `npm install` then `npm run build` |
+| **Hotkey not working** | Use default terminal mode instead (no setup needed!) |
 
-This shows detailed logging to help identify issues.
+### Platform-Specific
+
+#### macOS
+- If screenshots are black, grant Terminal screen recording permission
+- System Preferences → Security & Privacy → Privacy → Screen Recording
+
+#### Windows  
+- Run terminal as administrator if screenshot fails
+- Terminal mode works without admin rights
+
+#### Linux
+- May need to install: `sudo apt-get install imagemagick`
+- Wayland users: might need `XDG_SESSION_TYPE=x11`
 
 ---
 
-## 📖 Project Structure
+## 📁 Project Structure
 
 ```
 ai-screenshot-analyzer/
 ├── src/
-│   ├── main.ts              # Entry point & CLI commands
+│   ├── main.ts              # Entry point & CLI
+│   ├── terminal_monitor.ts  # Terminal input handler (NEW!)
 │   ├── ai_client.ts         # Claude API integration
-│   ├── hotkey_monitor.ts    # Global hotkey detection
-│   ├── screenshot.ts        # Screen capture & processing
-│   ├── config.ts           # Configuration management
-│   └── ui.ts               # Terminal UI formatting
-├── test/                   # Test suite
-├── package.json           # Dependencies & scripts
-└── tsconfig.json         # TypeScript configuration
+│   ├── screenshot.ts        # Screen capture
+│   ├── config.ts           # Configuration
+│   ├── ui.ts               # Terminal UI formatting
+│   └── hotkey_monitor.ts   # Optional hotkey support
+├── dist/                   # Compiled JavaScript
+├── package.json           # Dependencies
+└── tsconfig.json         # TypeScript config
 ```
 
 ---
 
-*Built with Node.js and TypeScript for excellent performance and easy deployment.*
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to:
+- 🐛 Report bugs
+- 💡 Suggest features  
+- 🔧 Submit pull requests
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file
+
+---
+
+## 🙏 Credits
+
+Built with:
+- [Claude 3.5 Sonnet](https://www.anthropic.com/claude) by Anthropic
+- [screenshot-desktop](https://github.com/bencevans/screenshot-desktop) for captures
+- [chalk](https://github.com/chalk/chalk) for beautiful terminal output
+- [commander](https://github.com/tj/commander.js) for CLI
+- [sharp](https://sharp.pixelplumbing.com/) for image optimization
+
+---
+
+## 🎯 Quick Commands Reference
+
+```bash
+# Basic usage
+npm start                    # Start with terminal input mode
+npm start --mode command     # Use command mode
+npm start --mode timer       # Auto-capture every 5 seconds
+
+# With options
+npm start -q "What is this?" # Start with a question
+npm start --interval 10      # Timer mode, 10-second intervals
+
+# One-shot commands  
+npm run capture              # Single capture and exit
+npm run solve                # Capture and solve coding problem
+npm run test                 # Test API connection
+
+# Development
+npm run build                # Compile TypeScript
+npm run dev                  # Development mode
+npm test                     # Run tests
+```
+
+---
+
+*Made with ❤️ for developers who love keyboard shortcuts but hate permission dialogs*
